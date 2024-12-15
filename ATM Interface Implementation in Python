@@ -1,0 +1,95 @@
+class ATM:
+    def __init__(self, balance=1000):
+        self.balance = balance
+        self.pin = "1234" 
+        self.is_logged_in = False
+
+    def login(self):
+        attempts = 3  
+        while attempts > 0:
+            entered_pin = input("Enter PIN: ")
+            if entered_pin == self.pin:
+                print("Login successful!")
+                self.is_logged_in = True
+                return True
+            else:
+                attempts -= 1
+                print(f"Incorrect PIN. You have {attempts} attempt(s) left.")
+        print("Login failed. Too many incorrect attempts.")
+        return False
+
+    def check_balance(self):
+        
+        if self.is_logged_in:
+            print(f"Your current balance is: ${self.balance}")
+        else:
+            print("Please log in first.")
+
+    def withdraw(self):
+        
+        if self.is_logged_in:
+            amount = float(input("Enter amount to withdraw: $"))
+            if amount <= 0:
+                print("Please enter a valid amount greater than zero.")
+            elif amount > self.balance:
+                print("Insufficient balance.")
+            else:
+                self.balance -= amount
+                print(f"Withdrawal successful! Your new balance is: ${self.balance}")
+        else:
+            print("Please log in first.")
+
+    def deposit(self):
+        
+        if self.is_logged_in:
+            amount = float(input("Enter amount to deposit: $"))
+            if amount <= 0:
+                print("Please enter a valid amount greater than zero.")
+            else:
+                self.balance += amount
+                print(f"Deposit successful! Your new balance is: ${self.balance}")
+        else:
+            print("Please log in first.")
+
+    def logout(self):
+        
+        print("Logging out...")
+        self.is_logged_in = False
+
+    def display_menu(self):
+       
+        print("\nATM Menu:")
+        print("1. Check Balance")
+        print("2. Withdraw Money")
+        print("3. Deposit Money")
+        print("4. Logout")
+        print("5. Exit")
+
+    def run(self):
+       
+        if not self.login():
+            return
+
+        while True:
+            self.display_menu()
+            choice = input("Choose an option (1-5): ")
+
+            if choice == "1":
+                self.check_balance()
+            elif choice == "2":
+                self.withdraw()
+            elif choice == "3":
+                self.deposit()
+            elif choice == "4":
+                self.logout()
+                break
+            elif choice == "5":
+                print("Thank you for using the ATM. Goodbye!")
+                break
+            else:
+                print("Invalid choice. Please choose again.")
+
+# Main program
+if __name__ == "__main__":
+    atm = ATM()  
+    atm.run()  
