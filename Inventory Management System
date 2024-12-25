@@ -1,0 +1,340 @@
+Overview of Features
+1.	User Authentication: Login and logout functionality.
+2.	Product Management: Add, edit, delete products.
+3.	Inventory Tracking: Track inventory levels and update stock.
+4.	Low-Stock Alerts: Notify the user when stock levels fall below a threshold.
+5.	Sales Summaries: Generate reports based on sales, including total sales, products sold, etc.
+6.	Data Validation: Ensure that data inputted by the user is valid (e.g., proper numerical values, non-empty fields).
+7.	Graphical User Interface (GUI): Use a framework like Tkinter or PyQt for building the interface.
+
+Step-by-Step Plan
+1. Project Planning & Setup (Days 1-2)
+•	Define Requirements: Create a list of all features you need to implement (already outlined above).
+•	Technology Stack: 
+o	Programming Language: Python
+o	Libraries/Frameworks: 
+	Tkinter for GUI
+	SQLite or CSV for database management (you can later switch to a more robust database like MySQL or PostgreSQL if needed).
+	Matplotlib or Pandas for generating sales summaries or reports.
+	bcrypt for user authentication (password hashing).
+•	Create a GitHub Repository for version control.
+2. Set Up Database (Days 3-4)
+•	Create Database Schema: Set up tables for products, users, sales, and inventory.
+o	products: Product name, ID, category, price, etc.
+o	users: Username, password (hashed), roles (admin/user).
+o	sales: Date, product ID, quantity sold, etc.
+o	inventory: Product ID, quantity in stock.
+•	Database Integration: If using SQLite, you can use Python's sqlite3 module to interact with the database.
+3. User Authentication System (Days 5-6)
+•	Login/Logout: Implement user authentication, where users must log in with a username and password. 
+o	Store passwords securely using bcrypt.
+•	User Roles: Define roles such as admin and regular users. Admins can edit the product catalog, while regular users can only view inventory.
+•	GUI Elements: Create login form using Tkinter.
+4. Product Management (Days 7-9)
+•	Add/Edit/Delete Products: 
+o	Add functionality to add new products to the inventory.
+o	Allow users to edit product details.
+o	Allow users to delete products from the inventory.
+•	GUI Design: 
+o	Create forms and tables to add/edit/delete products.
+o	Display product inventory in a list/table view.
+•	Data Validation: Make sure input is validated (e.g., product name shouldn’t be empty, price should be a valid number, stock should be a non-negative integer).
+5. Inventory Tracking (Days 10-11)
+•	Track Inventory Levels: 
+o	Implement the functionality to update the quantity of products when new stock is added or when sales occur.
+o	Allow users to view the current stock of each product.
+•	Low-Stock Alerts: 
+o	Implement a system to send alerts (e.g., using pop-up messages in the GUI) when the stock level of a product falls below a specified threshold.
+6. Sales Management & Reporting (Days 12-14)
+•	Sales Input: 
+o	Allow users to record sales transactions (quantity sold, product).
+o	Update inventory levels automatically after a sale.
+•	Generate Reports: 
+o	Implement features to generate sales summaries (e.g., total sales, most sold products).
+o	Implement low-stock alerts as part of the reporting.
+•	GUI for Reports: Design the GUI to display generated reports and statistics.
+7. GUI Enhancements (Days 15-16)
+•	User Interface Improvements: 
+o	Enhance the GUI to make it user-friendly, with clear navigation and well-organized forms.
+o	Use Tkinter widgets like Listbox, Button, Label, Entry, and Treeview (for displaying tables of data).
+•	Testing: 
+o	Test all functionalities, including adding/editing/deleting products, generating sales reports, and handling user authentication.
+o	Ensure the system is responsive and user-friendly.
+8. Finalizing the System (Days 17-19)
+•	Testing & Debugging: Perform thorough testing for edge cases and handle any bugs.
+•	Documentation: 
+o	Create basic documentation outlining the system design, user instructions, and how to use the system.
+•	Prepare Final Report: Prepare a report explaining: 
+o	The features implemented.
+o	Challenges faced and how you overcame them.
+o	Screenshots of the working system.
+o	Code snippets of key functionalities.
+9. Final Submission (Day 20)
+•	Submit the final report with the working code. Include the following: 
+o	A description of the project.
+o	Instructions on how to set up and use the Inventory Management System.
+o	A list of the main functionalities with explanations.
+
+Technologies and Libraries to Use
+1.	Python: Core programming language.
+2.	Tkinter: For building the graphical user interface (GUI).
+3.	SQLite: Lightweight database (or use CSV if you prefer a simpler solution).
+4.	Matplotlib / Pandas: For generating reports or visualizations.
+5.	bcrypt: For securely hashing passwords.
+6.	csv (optional): For simple data storage (if not using SQLite).
+
+
+
+Step by Step Code Implementation:
+1. Setup Database
+First, create the SQLite database and the necessary tables for users, products, and sales.
+import sqlite3
+
+# Create a connection to the SQLite database
+conn = sqlite3.connect('inventory_management.db')
+cursor = conn.cursor()
+
+# Create table for users (with hashed passwords)
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS users (
+    user_id INTEGER PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    role TEXT NOT NULL
+)
+''')
+
+# Create table for products
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS products (
+    product_id INTEGER PRIMARY KEY,
+    product_name TEXT NOT NULL,
+    price REAL NOT NULL,
+    stock INTEGER NOT NULL
+)
+''')
+
+# Create table for sales transactions
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS sales (
+    sale_id INTEGER PRIMARY KEY,
+    product_id INTEGER,
+    quantity INTEGER,
+    total REAL,
+    sale_date TEXT,
+    FOREIGN KEY (product_id) REFERENCES products (product_id)
+)
+''')
+
+conn.commit()
+conn.close()
+
+print("Database setup complete.")
+2. User Authentication
+We will use bcrypt for hashing passwords and verifying login credentials.
+import bcrypt
+import sqlite3
+
+# Function to hash password
+def hash_password(password):
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+# Function to check if the user exists and the password matches
+def check_login(username, password):
+    conn = sqlite3.connect('inventory_management.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
+    user = cursor.fetchone()
+    
+    if user and bcrypt.checkpw(password.encode('utf-8'), user[2].encode('utf-8')):
+        return True  # User authenticated
+    return False  # Authentication failed
+
+# Function to add a new user (e.g., admin)
+def add_user(username, password, role):
+    conn = sqlite3.connect('inventory_management.db')
+    cursor = conn.cursor()
+    
+    # Hash the password
+    hashed_password = hash_password(password)
+    
+    cursor.execute('''
+    INSERT INTO users (username, password, role) VALUES (?, ?, ?)
+    ''', (username, hashed_password, role))
+    conn.commit()
+    conn.close()
+
+print("User authentication setup complete.")
+
+3. Inventory Management
+Now, let's define functions to manage products (add, edit, delete).
+import sqlite3
+
+# Function to add a new product
+def add_product(product_name, price, stock):
+    conn = sqlite3.connect('inventory_management.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+    INSERT INTO products (product_name, price, stock) 
+    VALUES (?, ?, ?)
+    ''', (product_name, price, stock))
+    
+    conn.commit()
+    conn.close()
+
+# Function to edit an existing product
+def edit_product(product_id, product_name, price, stock):
+    conn = sqlite3.connect('inventory_management.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+    UPDATE products 
+    SET product_name = ?, price = ?, stock = ? 
+    WHERE product_id = ?
+    ''', (product_name, price, stock, product_id))
+    
+    conn.commit()
+    conn.close()
+
+# Function to delete a product
+def delete_product(product_id):
+    conn = sqlite3.connect('inventory_management.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+    DELETE FROM products WHERE product_id = ?
+    ''', (product_id,))
+    
+    conn.commit()
+    conn.close()
+
+# Function to update stock after a sale
+def update_stock_after_sale(product_id, quantity):
+    conn = sqlite3.connect('inventory_management.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+    UPDATE products SET stock = stock - ? WHERE product_id = ?
+    ''', (quantity, product_id))
+    
+    conn.commit()
+    conn.close()
+
+print("Inventory management functions complete.")
+4. Sales and Low-Stock Alerts
+Track sales, generate reports, and alert the user when stock is low.
+import sqlite3
+from datetime import datetime
+
+# Function to record a sale and update stock
+def record_sale(product_id, quantity):
+    conn = sqlite3.connect('inventory_management.db')
+    cursor = conn.cursor()
+    
+    # Get product details
+    cursor.execute('SELECT product_name, price, stock FROM products WHERE product_id = ?', (product_id,))
+    product = cursor.fetchone()
+    
+    if product and product[2] >= quantity:
+        total_price = product[1] * quantity
+        sale_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Record the sale in the sales table
+        cursor.execute('''
+        INSERT INTO sales (product_id, quantity, total, sale_date)
+        VALUES (?, ?, ?, ?)
+        ''', (product_id, quantity, total_price, sale_date))
+        
+        # Update stock
+        update_stock_after_sale(product_id, quantity)
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"Sale recorded: {product[0]} (x{quantity}) - Total: {total_price}")
+        
+        # Check for low-stock alert
+        if product[2] - quantity < 5:  # Threshold for low-stock
+            print("Alert: Low stock for product", product[0])
+    else:
+        print("Insufficient stock or product not found.")
+
+# Function to generate sales report
+def generate_sales_report():
+    conn = sqlite3.connect('inventory_management.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+    SELECT products.product_name, SUM(sales.quantity) as total_sold, SUM(sales.total) as total_revenue
+    FROM sales
+    JOIN products ON sales.product_id = products.product_id
+    GROUP BY products.product_name
+    ''')
+    
+    sales_report = cursor.fetchall()
+    
+    print("Sales Report:")
+    for row in sales_report:
+        print(f"Product: {row[0]}, Total Sold: {row[1]}, Total Revenue: {row[2]}")
+    
+    conn.close()
+
+print("Sales tracking and reporting functions complete.")
+5. GUI with Tkinter
+Finally, let’s create a simple GUI for product management and sales entry.
+import tkinter as tk
+from tkinter import messagebox
+
+# Create the main window
+root = tk.Tk()
+root.title("Inventory Management System")
+
+# Function to handle adding products
+def add_product_gui():
+    product_name = product_name_entry.get()
+    price = price_entry.get()
+    stock = stock_entry.get()
+
+    if not product_name or not price or not stock:
+        messagebox.showerror("Error", "All fields must be filled!")
+        return
+    
+    try:
+        price = float(price)
+        stock = int(stock)
+        add_product(product_name, price, stock)
+        messagebox.showinfo("Success", "Product added successfully!")
+    except ValueError:
+        messagebox.showerror("Error", "Please enter valid price and stock.")
+
+# GUI for adding products
+tk.Label(root, text="Product Name").pack()
+product_name_entry = tk.Entry(root)
+product_name_entry.pack()
+
+tk.Label(root, text="Price").pack()
+price_entry = tk.Entry(root)
+price_entry.pack()
+
+tk.Label(root, text="Stock").pack()
+stock_entry = tk.Entry(root)
+stock_entry.pack()
+
+add_product_button = tk.Button(root, text="Add Product", command=add_product_gui)
+add_product_button.pack()
+
+# Start the Tkinter main loop
+root.mainloop()
+
+
+
+
+How to Run the Program
+1.	First, run the Database Setup script to create the SQLite database and tables.
+2.	Add users (like an admin) by calling the add_user() function in Python shell or by integrating it into the GUI.
+3.	Run the Main GUI script to interact with the system. 
+o	Use the GUI to add products and track inventory.
+o	Sales transactions can be manually recorded by calling the record_sale() function.
+
